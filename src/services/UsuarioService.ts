@@ -1,30 +1,40 @@
-import { Usuario } from '../models/Usuario';
-import { Casa } from '../models/Casa';
+import { Usuario } from "../models/Usuario";
+import { Database } from "../database/Database";
 
 export class UsuarioService {
-    private usuarios: Usuario[] = [];
+  private usuarioDb: Database<Usuario>;
 
-    criarUsuario(nome: string, senha: string): Usuario {
-        const usuarioExistente = this.usuarios.find(user => user.nome === nome);
-        if (usuarioExistente) {
-            throw new Error('Usuário já existe');
-        }
+  constructor(usuarioDb: Database<Usuario>) {
+    this.usuarioDb = usuarioDb;
+  }
 
-        const novoUsuario = new Usuario(nome, senha);
-        this.usuarios.push(novoUsuario);
-        return novoUsuario;
+  // Sobrecarga 
+  criar(usuario: Usuario): Usuario;
+  criar(nome: string, senha: string): Usuario;
+  criar(nome: string): Usuario;
+
+  criar(param1: string | Usuario, param2?: string): void | Usuario {
+    if (param1 instanceof Usuario) {
+      if (this.usuarioDb.list().some(u => u.nome === param1.nome)) {
+        throw new Error('Usuário já existe');
+      }
+      this.usuarioDb.add(param1);
+    } else {
+      const usuario = new Usuario(param1, param2 || "defaultPassword");
+      if (this.usuarioDb.list().some(u => u.nome === usuario.nome)) {
+        throw new Error('Usuário já existe');
+      }
+      this.usuarioDb.add(usuario);
+      return usuario;
     }
+  }
 
-    logarUsuario(nome: string, senha: string): Usuario | null {
-        const usuario = this.usuarios.find(user => user.nome === nome && user.senha === senha);
-        return usuario || null;
-    }
+  listar(): Usuario[] {
+    return this.usuarioDb.list();
+  }
 
-    listarCasas(usuario: Usuario): Casa[] {
-        return usuario.getCasas();
-    }
-
-    addCasaToUsuario(usuario: Usuario, casa: Casa) {
-        usuario.addCasa(casa);
-    }
+  logar(nome: string, senha: string): Usuario | null {
+    const usuario = this.usuarioDb.find((u) => u.nome === nome && u.senha === senha);
+    return usuario || null;
+  }
 }

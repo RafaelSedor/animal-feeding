@@ -3,13 +3,16 @@ import { UserController } from "../controllers/UserController";
 import { CasaController } from "../controllers/CasaController";
 import { AnimalController } from "../controllers/AnimalController";
 import { AlimentacaoController } from "../controllers/AlimentacaoController";
+import { Usuario } from "../models/Usuario";
+import { Casa } from "../models/Casa";
+import { AnimalRaca } from "../enums/AnimalRaca";
+import { Animal } from "../models/Animal";
 import { UsuarioService } from "../services/UsuarioService";
 import { CasaService } from "../services/CasaService";
 import { AnimalService } from "../services/AnimalService";
 import { AlimentacaoService } from "../services/AlimentacaoService";
-import { Usuario } from "../models/Usuario";
-import { Casa } from "../models/Casa";
-import { AnimalRaca } from "../enums/AnimalRaca"; 
+import { Database } from "../database/Database";
+import { Alimentacao } from "../models/Alimentacao";
 
 export class ConsoleView {
   private userController: UserController;
@@ -17,12 +20,20 @@ export class ConsoleView {
   private animalController: AnimalController;
   private alimentacaoController: AlimentacaoController;
   private loggedInUser: Usuario | null = null;
+  private selectedCasa: Casa | null = null;
+  private selectedAnimal: Animal | null = null;
 
   constructor() {
-    const usuarioService = new UsuarioService();
-    const casaService = new CasaService();
-    const animalService = new AnimalService();
-    const alimentacaoService = new AlimentacaoService();
+
+    const usuarioDb = new Database<Usuario>();
+    const casaDb = new Database<Casa>();
+    const animalDb = new Database<Animal>();
+    const alimentacaoDb = new Database<Alimentacao>();
+
+    const usuarioService = new UsuarioService(usuarioDb);
+    const casaService = new CasaService(casaDb);
+    const animalService = new AnimalService(animalDb);
+    const alimentacaoService = new AlimentacaoService(alimentacaoDb);
 
     this.userController = new UserController(usuarioService);
     this.casaController = new CasaController(casaService);
@@ -33,17 +44,17 @@ export class ConsoleView {
   mainMenu() {
     while (true) {
       console.log("1. Criar Usuário");
-      console.log("2. Login");
+      console.log("2. Logar Usuário");
       console.log("3. Sair");
 
-      const choice = readlineSync.question("Escolha uma opção: ");
+      const option = readlineSync.question("Escolha uma opção: ");
 
-      switch (choice) {
+      switch (option) {
         case "1":
           this.createUser();
           break;
         case "2":
-          this.login();
+          this.loginUser();
           if (this.loggedInUser) {
             this.userMenu();
           }
@@ -51,145 +62,80 @@ export class ConsoleView {
         case "3":
           console.log("Saindo...");
           process.exit(0);
-          break;
         default:
-          console.log("Opção inválida.");
-          break;
+          console.log("Opção inválida!");
       }
-    }
-  }
-
-  createUser() {
-    const nome = readlineSync.question("Digite o nome de usuário: ");
-    const senha = readlineSync.question("Digite a senha: ", {
-      hideEchoBack: true,
-    });
-    try {
-      this.userController.criarUsuario(nome, senha);
-      console.log("Usuário criado com sucesso.");
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log("Erro ao criar usuário:", error.message);
-      } else {
-        console.log("Erro desconhecido ao criar usuário.");
-      }
-    }
-  }
-
-  login() {
-    const nome = readlineSync.question("Digite o nome de usuário: ");
-    const senha = readlineSync.question("Digite a senha: ", {
-      hideEchoBack: true,
-    });
-    const user = this.userController.logarUsuario(nome, senha);
-    if (user) {
-      console.log("Login bem-sucedido.");
-      this.loggedInUser = user;
-    } else {
-      console.log("Nome de usuário ou senha incorretos.");
     }
   }
 
   userMenu() {
     while (true) {
-      console.log("\n1. Criar Casa");
-      console.log("2. Listar Casas");
-      console.log("3. Entrar em Casa");
-      console.log("4. Logout");
+      console.log("\n1. Selecionar Casa");
+      console.log("2. Criar Casa");
+      console.log("3. Adicionar Usuário à Casa");
+      console.log("4. Listar Casas");
+      console.log("5. Sair");
 
-      const choice = readlineSync.question("Escolha uma opção: ");
+      const option = readlineSync.question("Escolha uma opção: ");
 
-      switch (choice) {
+      switch (option) {
         case "1":
-          this.createCasa();
+          this.selectCasa();
+          if (this.selectedCasa) {
+            this.casaMenu(this.selectedCasa);
+          }
           break;
         case "2":
-          this.listCasas();
+          this.createCasa();
           break;
         case "3":
-          this.enterCasa();
+          this.addUserToCasa();
           break;
         case "4":
-          this.loggedInUser = null;
-          console.log("Logout bem-sucedido.");
+          this.listCasas();
+          break;
+        case "5":
+          console.log("Voltando ao menu principal...");
           return;
         default:
-          console.log("Opção inválida.");
-          break;
+          console.log("Opção inválida!");
       }
     }
   }
 
-  createCasa() {
-    const nome = readlineSync.question("Digite o nome da casa: ");
-    const senha = readlineSync.question("Digite a senha da casa: ", {
-      hideEchoBack: true,
+  selectCasa() {
+    const casas = this.casaController.listarCasas();
+    if (casas.length === 0) {
+      console.log("Nenhuma casa encontrada.");
+      return;
+    }
+
+    console.log("Escolha uma casa para gerenciar:");
+    casas.forEach((casa, index) => {
+      console.log(`${index + 1}. ${casa.nome}`);
     });
-    try {
-      this.casaController.criarCasa(nome, senha);
-      console.log("Casa criada com sucesso.");
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log("Erro ao criar casa:", error.message);
-      } else {
-        console.log("Erro desconhecido ao criar casa.");
-      }
-    }
-  }
 
-  listCasas() {
-    if (this.loggedInUser) {
-      const casas = this.userController.listarCasas(this.loggedInUser);
-      console.log("\nCasas:");
-      casas.forEach((casa, index) => {
-        console.log(`${index + 1}. ${casa.nome}`);
-      });
+    const option = readlineSync.question("Escolha uma casa: ");
+    const casaIndex = parseInt(option, 10) - 1;
+
+    if (casaIndex >= 0 && casaIndex < casas.length) {
+      this.selectedCasa = casas[casaIndex];
+      console.log(`Casa selecionada: ${this.selectedCasa.nome}`);
     } else {
-      console.log("Você precisa estar logado para listar as casas.");
-    }
-  }
-
-  enterCasa() {
-    if (this.loggedInUser) {
-      const casas = this.userController.listarCasas(this.loggedInUser);
-      const casaIndex = readlineSync.questionInt("Escolha uma casa: ") - 1;
-
-      if (casaIndex >= 0 && casaIndex < casas.length) {
-        const casa = casas[casaIndex];
-        const senha = readlineSync.question("Digite a senha da casa: ", {
-          hideEchoBack: true,
-        });
-
-        try {
-          this.casaController.addUserToCasa(casa, this.loggedInUser, senha);
-          console.log("Entrou na casa com sucesso.");
-          this.casaMenu(casa);
-        } catch (error) {
-          if (error instanceof Error) {
-            console.log("Erro ao entrar na casa:", error.message);
-          } else {
-            console.log("Erro desconhecido ao entrar na casa.");
-          }
-        }
-      } else {
-        console.log("Casa inválida.");
-      }
-    } else {
-      console.log("Você precisa estar logado para entrar em uma casa.");
+      console.log("Opção inválida!");
     }
   }
 
   casaMenu(casa: Casa) {
     while (true) {
       console.log("\n1. Criar Animal");
-      console.log("2. Listar Animais");
-      console.log("3. Registrar Alimentação");
-      console.log("4. Listar Alimentações");
-      console.log("5. Voltar");
+      console.log("2. Listar Animais da Casa");
+      console.log("3. Gerenciar Alimentações");
+      console.log("4. Sair");
 
-      const choice = readlineSync.question("Escolha uma opção: ");
+      const option = readlineSync.question("Escolha uma opção: ");
 
-      switch (choice) {
+      switch (option) {
         case "1":
           this.createAnimal(casa);
           break;
@@ -197,79 +143,186 @@ export class ConsoleView {
           this.listAnimais(casa);
           break;
         case "3":
-          this.registerFeeding(casa);
+          this.animalMenu(casa);
           break;
         case "4":
-          this.listAlimentacoes(casa);
-          break;
-        case "5":
+          console.log("Voltando ao menu de usuário...");
           return;
         default:
-          console.log("Opção inválida.");
-          break;
+          console.log("Opção inválida!");
       }
+    }
+  }
+
+  animalMenu(casa: Casa) {
+    while (true) {
+      console.log("\n1. Selecionar Animal");
+      console.log("2. Criar Alimentação");
+      console.log("3. Listar Alimentações");
+      console.log("4. Voltar");
+
+      const option = readlineSync.question("Escolha uma opção: ");
+
+      switch (option) {
+        case "1":
+          this.selectAnimal(casa);
+          break;
+        case "2":
+          if (this.selectedAnimal) {
+            this.createAlimentacao(casa, this.selectedAnimal);
+          } else {
+            console.log("Nenhum animal selecionado.");
+          }
+          break;
+        case "3":
+          if (this.selectedAnimal) {
+            this.listAlimentacoes(this.selectedAnimal);
+          } else {
+            console.log("Nenhum animal selecionado.");
+          }
+          break;
+        case "4":
+          console.log("Voltando ao menu da casa...");
+          return;
+        default:
+          console.log("Opção inválida!");
+      }
+    }
+  }
+
+  selectAnimal(casa: Casa) {
+    const animais = this.animalController.listarAnimais(casa);
+    if (animais.length === 0) {
+      console.log("Nenhum animal encontrado.");
+      return;
+    }
+
+    console.log("Escolha um animal:");
+    animais.forEach((animal, index) => {
+      console.log(`${index + 1}. ${animal.nome}`);
+    });
+
+    const option = readlineSync.question("Escolha um animal: ");
+    const animalIndex = parseInt(option, 10) - 1;
+
+    if (animalIndex >= 0 && animalIndex < animais.length) {
+      this.selectedAnimal = animais[animalIndex];
+      console.log(`Animal selecionado: ${this.selectedAnimal.nome}`);
+    } else {
+      console.log("Opção inválida!");
+    }
+  }
+
+  createUser() {
+    const nome = readlineSync.question("Nome do usuário: ");
+    const senha = readlineSync.question("Senha do usuário (ou deixe em branco para senha padrão): ", { hideEchoBack: true });
+
+    if (senha) {
+      this.userController.criarUsuario(nome, senha);
+    } else {
+      this.userController.criarUsuario(nome, "defaultPassword");
+    }
+    
+    console.log("Usuário criado com sucesso!");
+  }
+
+  loginUser() {
+    const nome = readlineSync.question("Nome do usuário: ");
+    const senha = readlineSync.question("Senha do usuário: ", { hideEchoBack: true });
+    this.loggedInUser = this.userController.logarUsuario(nome, senha);
+    if (this.loggedInUser) {
+      console.log(`Login bem-sucedido! Bem-vindo, ${this.loggedInUser.toString()}`);
+    } else {
+      console.log("Falha no login. Verifique suas credenciais.");
+    }
+  }
+
+
+  createCasa() {
+    if (!this.loggedInUser) {
+      console.log("Você precisa estar logado para criar uma casa.");
+      return;
+    }
+    const nome = readlineSync.question("Nome da casa: ");
+    const senha = readlineSync.question("Senha da casa: ", { hideEchoBack: true });
+    this.casaController.criarCasa(nome, senha);
+    console.log("Casa criada com sucesso!");
+  }
+
+  addUserToCasa() {
+    if (!this.loggedInUser) {
+      console.log("Você precisa estar logado para adicionar um usuário à casa.");
+      return;
+    }
+    const casaNome = readlineSync.question("Nome da casa: ");
+    const casa = this.casaController.listarCasas().find((c) => c.nome === casaNome);
+    if (!casa) {
+      console.log("Casa não encontrada.");
+      return;
+    }
+    const nome = readlineSync.question("Nome do usuário a ser adicionado: ");
+    const senha = readlineSync.question("Senha da casa: ", { hideEchoBack: true });
+    const usuario = this.userController.listarUsuarios().find((u) => u.nome === nome);
+    if (usuario) {
+      try {
+        this.casaController.addUserToCasa(casa, usuario, senha);
+        console.log("Usuário adicionado à casa com sucesso!");
+      } catch (error) {
+        if (error instanceof Error) {
+          console.log("Erro ao executar a operação:", error.message);
+        } else {
+          console.log("Erro desconhecido:", error);
+        }
+      }
+    } else {
+      console.log("Usuário não encontrado.");
     }
   }
 
   createAnimal(casa: Casa) {
-    const nome = readlineSync.question("Digite o nome do animal: ");
-    const raca = readlineSync.question("Digite a raça do animal: ");
-    try {
-      this.animalController.criarAnimal(nome, raca as AnimalRaca, casa); 
-      console.log("Animal criado com sucesso.");
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log("Erro ao criar animal:", error.message);
-      } else {
-        console.log("Erro desconhecido ao criar animal.");
-      }
+    const nome = readlineSync.question("Nome do animal: ");
+    const raca = readlineSync.question("Raça do animal (Cachorro/Gato/Pássaro): ") as AnimalRaca;
+    this.animalController.criarAnimal(nome, raca, casa);
+    console.log("Animal criado com sucesso!");
+  }
+
+  createAlimentacao(casa: Casa, animal: Animal) {
+    const data = new Date(readlineSync.question("Data (YYYY-MM-DD): "));
+    const hora = readlineSync.question("Hora (HH:MM): ");
+    this.alimentacaoController.criarAlimentacao(animal, data, hora);
+    console.log("Alimentação registrada com sucesso!");
+  }
+
+  listCasas() {
+    const casas = this.casaController.listarCasas();
+    if (casas.length === 0) {
+      console.log("Nenhuma casa encontrada.");
+    } else {
+      casas.forEach((casa) =>
+        console.log(`Casa: ${casa.nome}, Usuários: ${casa.usuarios.length}, Animais: ${casa.animais.length}`)
+      );
     }
   }
 
   listAnimais(casa: Casa) {
-    const animais = this.casaController.listarAnimais(casa);
-    console.log("\nAnimais:");
-    animais.forEach((animal, index) => {
-      console.log(`${index + 1}. ${animal.nome} - ${animal.raca}`);
-    });
-  }
-
-  registerFeeding(casa: Casa) {
-    const animais = this.casaController.listarAnimais(casa);
-    const animalIndex = readlineSync.questionInt("Escolha um animal: ") - 1;
-
-    if (animalIndex >= 0 && animalIndex < animais.length) {
-      const animal = animais[animalIndex];
-      const data = new Date();
-      const hora = readlineSync.question(
-        "Digite a hora da alimentação (HH:MM): "
-      );
-
-      try {
-        this.alimentacaoController.criarAlimentacao(animal, data, hora);
-        console.log("Alimentação registrada com sucesso.");
-      } catch (error) {
-        if (error instanceof Error) {
-          console.log("Erro ao registrar alimentação:", error.message);
-        } else {
-          console.log("Erro desconhecido ao registrar alimentação.");
-        }
-      }
+    const animais = this.animalController.listarAnimais(casa);
+    if (animais.length === 0) {
+      console.log("Nenhum animal encontrado.");
     } else {
-      console.log("Animal inválido.");
+      animais.forEach((animal) =>
+        console.log(`Animal: ${animal.nome}, Raça: ${animal.raca}`)
+      );
     }
   }
 
-  listAlimentacoes(casa: Casa) {
-    const animais = this.casaController.listarAnimais(casa);
-    animais.forEach((animal) => {
-      const alimentacoes = this.animalController.listarAlimentacoes(animal);
-      console.log(`\nAlimentações para ${animal.nome}:`);
-      alimentacoes.forEach((alimentacao) => {
-        console.log(
-          `${alimentacao.data.toLocaleDateString()} - ${alimentacao.hora}`
-        );
-      });
-    });
+  listAlimentacoes(animal: Animal) {
+    const alimentacoes = this.alimentacaoController.listarAlimentacoes(animal);
+    if (alimentacoes.length === 0) {
+      console.log("Nenhuma alimentação encontrada.");
+    } else {
+      alimentacoes.forEach((alimentacao) =>
+        console.log(`Data: ${alimentacao.data.toISOString().split('T')[0]}, Hora: ${alimentacao.hora}`)
+      );
+    }
   }
 }

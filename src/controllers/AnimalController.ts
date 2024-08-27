@@ -1,24 +1,22 @@
-import { AnimalService } from '../services/AnimalService';
-import { Casa } from '../models/Casa';
-import { Animal } from '../models/Animal';
-import { Alimentacao } from '../models/Alimentacao';
+import { AnimalService } from "../services/AnimalService";
+import { Casa } from "../models/Casa";
+import { Animal } from "../models/Animal";
+import { AnimalRaca } from "../enums/AnimalRaca";
 
 export class AnimalController {
-    private animalService: AnimalService;
+  private animalService: AnimalService;
 
-    constructor(animalService: AnimalService) {
-        this.animalService = animalService;
-    }
+  constructor(animalService: AnimalService) {
+    this.animalService = animalService;
+  }
 
-    criarAnimal(nome: string, raca: string, casa: Casa): Animal {
-        return this.animalService.criarAnimal(nome, raca, casa);
-    }
+  criarAnimal(nome: string, raca: AnimalRaca, casa: Casa): void {
+    const animal = new Animal(nome, raca);
+    casa.addAnimal(animal);
+    this.animalService.criar(animal);
+  }
 
-    listarAlimentacoes(animal: Animal): Alimentacao[] {
-        return this.animalService.listarAlimentacoes(animal);
-    }
-
-    addAlimentacaoToAnimal(animal: Animal, alimentacao: Alimentacao): void {
-        this.animalService.addAlimentacaoToAnimal(animal, alimentacao);
-    }
+  listarAnimais(casa: Casa): Animal[] {
+    return casa.animais;
+  }
 }

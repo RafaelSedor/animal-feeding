@@ -1,30 +1,19 @@
-import { Usuario } from './Usuario';
-import { Animal } from './Animal';
+import { EntidadeNomeada } from "./EntidadeNomeada";
+import { Usuario } from "./Usuario";
+import { Animal } from "./Animal";
+export class Casa extends EntidadeNomeada {
+  public animais: Animal[] = [];
+  public usuarios: Usuario[] = [];
 
-export class Casa {
-    nome: string;
-    senha: string;
-    private usuarios: Usuario[] = [];
-    private animais: Animal[] = [];
+  constructor(nome: string, senha: string) {
+    super(nome, senha);
+  }
 
-    constructor(nome: string, senha: string) {
-        this.nome = nome;
-        this.senha = senha;
-    }
+  addAnimal(animal: Animal): void {
+    this.animais.push(animal);
+  }
 
-    getUsuarios(): Usuario[] {
-        return this.usuarios;
-    }
-
-    addUsuario(usuario: Usuario): void {
-        this.usuarios.push(usuario);
-    }
-
-    addAnimal(animal: Animal): void {
-        this.animais.push(animal);
-    }
-
-    getAnimais(): Animal[] {
-        return this.animais;
-    }
+  addUser(usuario: Usuario): void {
+    this.usuarios.push(usuario);
+  }
 }

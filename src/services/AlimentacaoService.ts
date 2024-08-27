@@ -1,14 +1,19 @@
-import { Alimentacao } from '../models/Alimentacao';
-import { Animal } from '../models/Animal';
+import { Alimentacao } from "../models/Alimentacao";
+import { IService } from "../interfaces/IService";
+import { Database } from "../database/Database";
 
-export class AlimentacaoService {
-    criarAlimentacao(animal: Animal, data: Date, hora: string): Alimentacao {
-        const novaAlimentacao = new Alimentacao(data, hora, animal);
-        animal.addAlimentacao(novaAlimentacao);
-        return novaAlimentacao;
-    }
+export class AlimentacaoService implements IService<Alimentacao> {
+  private database: Database<Alimentacao>;
 
-    listarAlimentacoes(animal: Animal): Alimentacao[] {
-        return animal.getAlimentacoes();
-    }
+  constructor(database: Database<Alimentacao>) {
+    this.database = database;
+  }
+
+  criar(alimentacao: Alimentacao): void {
+    this.database.add(alimentacao);
+  }
+
+  listar(): Alimentacao[] {
+    return this.database.list();
+  }
 }

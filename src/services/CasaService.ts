@@ -1,34 +1,28 @@
-import { Casa } from '../models/Casa';
-import { Usuario } from '../models/Usuario';
-import { Animal } from '../models/Animal';
+import { Casa } from "../models/Casa";
+import { IService } from "../interfaces/IService";
+import { Usuario } from "../models/Usuario";
+import { Database } from "../database/Database";
 
-export class CasaService {
-    private casas: Casa[] = [];
+export class CasaService implements IService<Casa> {
+  private database: Database<Casa>;
 
-    criarCasa(nome: string, senha: string): Casa {
-        const casaExistente = this.casas.find(casa => casa.nome === nome);
-        if (casaExistente) {
-            throw new Error('Casa já existe');
-        }
+  constructor(database: Database<Casa>) {
+    this.database = database;
+  }
 
-        const novaCasa = new Casa(nome, senha);
-        this.casas.push(novaCasa);
-        return novaCasa;
+  criar(casa: Casa): void {
+    this.database.add(casa);
+  }
+
+  listar(): Casa[] {
+    return this.database.list();
+  }
+
+  addUserToCasa(casa: Casa, usuario: Usuario, senha: string): void {
+    if (casa.senha === senha) {
+      casa.addUser(usuario);
+    } else {
+      throw new Error("Senha incorreta.");
     }
-
-    addUserToCasa(casa: Casa, usuario: Usuario, senha: string): void {
-        if (casa.senha !== senha) {
-            throw new Error('Senha incorreta');
-        }
-
-        casa.addUsuario(usuario);
-    }
-
-    listarAnimais(casa: Casa): Animal[] {
-        return casa.getAnimais();
-    }
-
-    addAnimalToCasa(casa: Casa, animal: Animal): void {
-        casa.addAnimal(animal);
-    }
+  }
 }

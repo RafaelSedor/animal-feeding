@@ -1,20 +1,10 @@
-import { Casa } from './Casa';
+import { EntidadeNomeada } from "./EntidadeNomeada";
+export class Usuario extends EntidadeNomeada {
+  constructor(nome: string, senha: string) {
+    super(nome, senha);
+  }
 
-export class Usuario {
-    nome: string;
-    senha: string;
-    private casas: Casa[] = [];
-
-    constructor(nome: string, senha: string) {
-        this.nome = nome;
-        this.senha = senha;
-    }
-
-    addCasa(casa: Casa): void {
-        this.casas.push(casa);
-    }
-
-    getCasas(): Casa[] {
-        return this.casas;
-    }
+  toString(): string {
+    return `Usuario: ${this.nome}`;
+  }
 }

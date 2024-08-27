@@ -1,11 +1,15 @@
-import { Usuario } from '../models/Usuario';
-import { Casa } from '../models/Casa';
-import { Animal } from '../models/Animal';
-import { Alimentacao } from '../models/Alimentacao';
+export class Database<T> {
+  private data: T[] = [];
 
-export class Database {
-    usuarios: Usuario[] = [];
-    casas: Casa[] = [];
-    animais: Animal[] = [];
-    alimentacoes: Alimentacao[] = [];
+  add(item: T): void {
+    this.data.push(item);
+  }
+
+  list(): T[] {
+    return this.data;
+  }
+
+  find(predicate: (item: T) => boolean): T | undefined {
+    return this.data.find(predicate);
+  }
 }

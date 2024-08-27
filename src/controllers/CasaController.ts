@@ -1,28 +1,27 @@
-import { CasaService } from '../services/CasaService';
-import { Casa } from '../models/Casa';
-import { Usuario } from '../models/Usuario';
-import { Animal } from '../models/Animal';
+import { CasaService } from "../services/CasaService";
+import { Casa } from "../models/Casa";
+import { Usuario } from "../models/Usuario";
 
 export class CasaController {
-    private casaService: CasaService;
+  private casaService: CasaService;
 
-    constructor(casaService: CasaService) {
-        this.casaService = casaService;
-    }
+  constructor(casaService: CasaService) {
+    this.casaService = casaService;
+  }
 
-    criarCasa(nome: string, senha: string): Casa {
-        return this.casaService.criarCasa(nome, senha);
-    }
+  criarCasa(nome: string, senha: string): void {
+    const casa = new Casa(nome, senha);
+    this.casaService.criar(casa);
+  }
 
-    addUserToCasa(casa: Casa, usuario: Usuario, senha: string): void {
-        this.casaService.addUserToCasa(casa, usuario, senha);
-    }
+  listarCasas(): Casa[] {
+    return this.casaService.listar();
+  }
 
-    listarAnimais(casa: Casa): Animal[] {
-        return this.casaService.listarAnimais(casa);
+  addUserToCasa(casa: Casa, usuario: Usuario, senha: string): void {
+    if (casa.senha !== senha) {
+      throw new Error('Senha incorreta');
     }
-
-    addAnimalToCasa(casa: Casa, animal: Animal): void {
-        this.casaService.addAnimalToCasa(casa, animal);
-    }
+    casa.usuarios.push(usuario);
+  }
 }

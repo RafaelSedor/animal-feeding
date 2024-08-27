@@ -1,19 +1,20 @@
-import { AlimentacaoService } from '../services/AlimentacaoService';
-import { Alimentacao } from '../models/Alimentacao';
-import { Animal } from '../models/Animal';
+import { AlimentacaoService } from "../services/AlimentacaoService";
+import { Alimentacao } from "../models/Alimentacao";
+import { Animal } from "../models/Animal";
 
 export class AlimentacaoController {
-    private alimentacaoService: AlimentacaoService;
+  private alimentacaoService: AlimentacaoService;
 
-    constructor(alimentacaoService: AlimentacaoService) {
-        this.alimentacaoService = alimentacaoService;
-    }
+  constructor(alimentacaoService: AlimentacaoService) {
+    this.alimentacaoService = alimentacaoService;
+  }
 
-    criarAlimentacao(animal: Animal, data: Date, hora: string): Alimentacao {
-        return this.alimentacaoService.criarAlimentacao(animal, data, hora);
-    }
+  criarAlimentacao(animal: Animal, data: Date, hora: string): void {
+    const alimentacao = new Alimentacao(animal, data, hora);
+    this.alimentacaoService.criar(alimentacao);
+  }
 
-    listarAlimentacoes(animal: Animal): Alimentacao[] {
-        return this.alimentacaoService.listarAlimentacoes(animal);
-    }
+  listarAlimentacoes(animal: Animal): Alimentacao[] {
+    return this.alimentacaoService.listar().filter(alimentacao => alimentacao.animal === animal);
+  }
 }

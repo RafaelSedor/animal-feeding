@@ -1,23 +1,23 @@
-import { UsuarioService } from '../services/UsuarioService';
-import { Usuario } from '../models/Usuario';
-import { Casa } from '../models/Casa';
+import { UsuarioService } from "../services/UsuarioService";
+import { Usuario } from "../models/Usuario";
 
 export class UserController {
-    private usuarioService: UsuarioService;
+  private usuarioService: UsuarioService;
 
-    constructor(usuarioService: UsuarioService) {
-        this.usuarioService = usuarioService;
-    }
+  constructor(usuarioService: UsuarioService) {
+    this.usuarioService = usuarioService;
+  }
 
-    criarUsuario(nome: string, senha: string): Usuario {
-        return this.usuarioService.criarUsuario(nome, senha);
-    }
+  criarUsuario(nome: string, senha: string): Usuario {
+    const usuario = this.usuarioService.criar(nome, senha);
+    return usuario;
+  }
 
-    logarUsuario(nome: string, senha: string): Usuario | null {
-        return this.usuarioService.logarUsuario(nome, senha);
-    }
+  logarUsuario(nome: string, senha: string): Usuario | null {
+    return this.usuarioService.logar(nome, senha);
+  }
 
-    listarCasas(usuario: Usuario): Casa[] {
-        return this.usuarioService.listarCasas(usuario);
-    }
+  listarUsuarios(): Usuario[] {
+    return this.usuarioService.listar();
+  }
 }

@@ -1,19 +1,23 @@
-import { Animal } from '../models/Animal';
-import { Casa } from '../models/Casa';
-import { Alimentacao } from '../models/Alimentacao';
+import { Animal } from "../models/Animal";
+import { IService } from "../interfaces/IService";
+import { Database } from "../database/Database";
 
-export class AnimalService {
-    criarAnimal(nome: string, raca: string, casa: Casa): Animal {
-        const novoAnimal = new Animal(nome, raca, casa);
-        casa.addAnimal(novoAnimal);
-        return novoAnimal;
-    }
+export class AnimalService implements IService<Animal> {
+  private database: Database<Animal>;
 
-    listarAlimentacoes(animal: Animal): Alimentacao[] {
-        return animal.getAlimentacoes();
-    }
+  constructor(database: Database<Animal>) {
+    this.database = database;
+  }
 
-    addAlimentacaoToAnimal(animal: Animal, alimentacao: Alimentacao): void {
-        animal.addAlimentacao(alimentacao);
+  // Sobrescrita
+  criar(animal: Animal): void {
+    if (animal.raca === "Cachorro") {
+      console.log("Criando um novo cachorro!");
     }
+    this.database.add(animal);
+  }
+
+  listar(): Animal[] {
+    return this.database.list();
+  }
 }
